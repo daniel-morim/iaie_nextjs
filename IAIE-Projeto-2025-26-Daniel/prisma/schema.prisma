@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id            String     @id
+  name          String     @db.Text
+  email         String
+  emailverified Boolean    @default(false)
+  image         String?    @db.Text
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @default(now()) @updatedAt
+  isAnonymous   Boolean?
+  role Role @default(user)
+  sessionss     Sessions[]
+  accountss     Accounts[]
+
+  @@unique([email])
+  @@map("users")
+}
+
+model Sessions {
+  id        String   @id
+  expiresat DateTime
+  token     String
+  createdat DateTime @default(now())
+  updatedat DateTime @updatedAt
+  ipaddress String?  @db.Text
+  useragent String?  @db.Text
+  userid    String
+  users     Users    @relation(fields: [userid], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("sessions")
+}
+
+model Accounts {
+  id                    String    @id
+  accountId             String    @db.Text
+  providerId            String    @db.Text
+  userid                String
+  users                 Users     @relation(fields: [userid], references: [id], onDelete: Cascade)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?   @db.Text
+  password              String?   @db.Text
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("accounts")
+}
+
+model Verifications {
+  id         String   @id
+  identifier String   @db.Text
+  value      String   @db.Text
+  expiresat  DateTime
+  createdat  DateTime @default(now())
+  updatedat  DateTime @default(now()) @updatedAt
+
+  @@map("verifications")
+}
+
+model MoloniAuth {
+  id            Int      @id @default(1) // Vamos usar sempre o ID 1
+  accessToken   String   @db.Text
+  refreshToken  String   @db.Text
+  accessExpiresAt     DateTime // Data absoluta de expiração
+  refreshExpiresAt    DateTime
+  updatedAt     DateTime @updatedAt
+}
+
+enum Role {
+  user
+  employee
+  manager
+  admin
+}
